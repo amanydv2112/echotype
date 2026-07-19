@@ -1,10 +1,12 @@
 # EchoType
 
-Open-source macOS dictation with your own speech-to-text provider.
+Open-source Wispr Flow alternative for macOS with bring-your-own API key speech-to-text.
 
 EchoType is a native macOS menu bar app for push-to-talk dictation. Hold `Option + Space`, speak, release, and EchoType transcribes with an OpenAI-compatible speech-to-text endpoint, optionally cleans up punctuation/casing, then pastes the text into the active app.
 
 > v0.1.0 is unsigned/ad-hoc signed and not notarized. macOS may block the first launch until you choose **Open Anyway** in System Settings.
+
+EchoType is not affiliated with Wispr Flow.
 
 ## Demo
 

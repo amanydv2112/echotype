@@ -30,7 +30,15 @@ Screenshot and short demo GIF coming with the first GitHub release.
 3. Launch EchoType. If macOS blocks it, open **System Settings > Privacy & Security** and choose **Open Anyway**.
 4. Grant Microphone permission for recording.
 5. Grant Accessibility permission so EchoType can listen for the global shortcut and paste into other apps.
-6. Open EchoType settings from the menu bar icon and add your provider details.
+6. Open EchoType settings from the menu bar icon and add your provider details:
+   - **Base URL:** use `https://api.openai.com/v1` for OpenAI, or your OpenAI-compatible provider URL.
+   - **API key:** paste your provider API key. EchoType uses a BYOK model, so no key is bundled.
+   - **STT model:** use `gpt-4o-mini-transcribe` for OpenAI, or the transcription model name from your provider.
+   - **Language code:** optional, for example `en`. Leave blank for auto-detect when supported.
+   - **Provider prompt:** optional vocabulary/context hints for transcription.
+   - **Response format:** keep `text` unless your provider requires `json`.
+   - **Cleanup model:** optional OpenAI-compatible chat model used to fix punctuation/casing before paste.
+7. Click **Save** in Settings, then hold `Option + Space`, speak, and release to test dictation.
 
 ## Build From Source
 

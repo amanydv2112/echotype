@@ -1,0 +1,38 @@
+name: Bug Report
+description: Report something that is broken in EchoType.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve EchoType.
+  - type: input
+    id: version
+    attributes:
+      label: EchoType version
+      placeholder: v0.1.0 or commit SHA
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: macOS 14.6, 15.0, etc.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the issue and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Launch EchoType
+        2. Hold Option + Space
+        3. ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove API keys, transcripts, and private data before attaching.

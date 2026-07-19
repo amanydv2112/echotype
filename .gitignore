@@ -1,0 +1,11 @@
+.DS_Store
+._*
+.build/
+DerivedData/
+dist/
+EchoType.app/
+.swiftpm/
+*.zip
+*.sha256
+*.xcuserdata/
+*.xcodeproj/project.xcworkspace/

@@ -24,6 +24,11 @@ final class DictationController: ObservableObject {
 
     init(appState: AppState) {
         self.appState = appState
+        recorder.setLevelHandler { [weak self] level in
+            DispatchQueue.main.async {
+                self?.hud.updateLevel(level)
+            }
+        }
     }
 
     func beginDictation() {
@@ -60,7 +65,7 @@ final class DictationController: ObservableObject {
 
     func endDictation() {
         guard status == .recording else { return }
-        hud.showProcessing()
+        hud.hide()
         appState.lastMessage = "Processing"
         status = .processing
 

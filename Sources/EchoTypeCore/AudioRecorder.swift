@@ -15,6 +15,7 @@ public struct RecordingResult: Equatable, Sendable {
 
 public final class AudioRecorder: @unchecked Sendable {
     private let engine = AVAudioEngine()
+    private let levelMeter = AudioLevelMeter()
     private var audioSink: AudioFileSink?
     private var recordingURL: URL?
     private var startedAt: Date?
@@ -22,6 +23,10 @@ public final class AudioRecorder: @unchecked Sendable {
     public private(set) var isRecording = false
 
     public init() {}
+
+    public func setLevelHandler(_ handler: AudioLevelHandler?) {
+        levelMeter.setHandler(handler)
+    }
 
     public func start() throws -> URL {
         guard !isRecording else {
@@ -38,6 +43,7 @@ public final class AudioRecorder: @unchecked Sendable {
 
         input.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in
             sink.write(buffer)
+            self.levelMeter.process(buffer)
         }
 
         engine.prepare()
@@ -78,6 +84,65 @@ public final class AudioRecorder: @unchecked Sendable {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("echotype-\(UUID().uuidString)")
             .appendingPathExtension("wav")
+    }
+}
+
+public typealias AudioLevelHandler = @Sendable (Double) -> Void
+
+private final class AudioLevelMeter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var handler: AudioLevelHandler?
+    private var lastEmitNanoseconds: UInt64 = 0
+
+    func setHandler(_ handler: AudioLevelHandler?) {
+        lock.lock()
+        self.handler = handler
+        lock.unlock()
+    }
+
+    func process(_ buffer: AVAudioPCMBuffer) {
+        let now = DispatchTime.now().uptimeNanoseconds
+        let localHandler: AudioLevelHandler?
+
+        lock.lock()
+        guard handler != nil, now - lastEmitNanoseconds >= 33_000_000 else {
+            lock.unlock()
+            return
+        }
+        lastEmitNanoseconds = now
+        localHandler = handler
+        lock.unlock()
+
+        localHandler?(Self.normalizedLevel(from: buffer))
+    }
+
+    private static func normalizedLevel(from buffer: AVAudioPCMBuffer) -> Double {
+        guard let channelData = buffer.floatChannelData else { return 0 }
+
+        let frameLength = Int(buffer.frameLength)
+        let channelCount = Int(buffer.format.channelCount)
+        guard frameLength > 0, channelCount > 0 else { return 0 }
+
+        var squareSum = 0.0
+        var sampleCount = 0
+
+        for channel in 0..<channelCount {
+            let samples = channelData[channel]
+            for frame in 0..<frameLength {
+                let sample = Double(samples[frame])
+                squareSum += sample * sample
+            }
+            sampleCount += frameLength
+        }
+
+        guard sampleCount > 0 else { return 0 }
+
+        let rms = sqrt(squareSum / Double(sampleCount))
+        guard rms > 0 else { return 0 }
+
+        let decibels = 20 * log10(rms)
+        let normalized = min(max((decibels + 55) / 55, 0), 1)
+        return pow(normalized, 0.75)
     }
 }
 

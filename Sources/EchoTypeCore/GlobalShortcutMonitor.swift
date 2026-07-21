@@ -104,13 +104,15 @@ public final class GlobalShortcutMonitor: @unchecked Sendable {
                 let callback = onShortcutDown
                 Task { @MainActor in callback?() }
             }
+            return nil
         } else if type == .keyUp {
             if isPressed {
                 finishShortcut()
+                return nil
             }
         }
 
-        return nil
+        return Unmanaged.passUnretained(event)
     }
 
     private func finishShortcut() {

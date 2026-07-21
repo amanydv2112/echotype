@@ -18,6 +18,7 @@ final class StatusBarController {
 
         appState.$lastMessage.sink { [weak self] _ in self?.refresh() }.store(in: &cancellables)
         appState.$isPaused.sink { [weak self] _ in self?.refresh() }.store(in: &cancellables)
+        appState.$accessibilityTrusted.sink { [weak self] _ in self?.refresh() }.store(in: &cancellables)
         dictationController.$status.sink { [weak self] _ in self?.refresh() }.store(in: &cancellables)
     }
 
@@ -33,13 +34,16 @@ final class StatusBarController {
     private var title: String {
         switch dictationController.status {
         case .idle:
-            return appState.isPaused ? "Flow Paused" : "Flow"
+            if !appState.accessibilityTrusted {
+                return "Setup Required"
+            }
+            return appState.isPaused ? "EchoType Paused" : "EchoType"
         case .recording:
             return "Recording"
         case .processing:
             return "Processing"
         case .failed:
-            return "Flow Error"
+            return "EchoType Error"
         }
     }
 
@@ -53,7 +57,8 @@ final class StatusBarController {
         pauseItem.target = self
         menu.addItem(pauseItem)
 
-        let permissionItem = NSMenuItem(title: "Check Permissions", action: #selector(checkPermissions), keyEquivalent: "")
+        let permissionTitle = appState.accessibilityTrusted ? "Check Permissions" : "Enable Accessibility Permission"
+        let permissionItem = NSMenuItem(title: permissionTitle, action: #selector(checkPermissions), keyEquivalent: "")
         permissionItem.target = self
         menu.addItem(permissionItem)
 

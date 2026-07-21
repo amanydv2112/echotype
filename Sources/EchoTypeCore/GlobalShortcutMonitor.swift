@@ -20,7 +20,8 @@ public final class GlobalShortcutMonitor: @unchecked Sendable {
         stop()
     }
 
-    public func start() {
+    @discardableResult
+    public func start() -> Bool {
         stop()
 
         let mask = (1 << CGEventType.keyDown.rawValue)
@@ -35,12 +36,13 @@ public final class GlobalShortcutMonitor: @unchecked Sendable {
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         )
 
-        guard let eventTap else { return }
+        guard let eventTap else { return false }
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
         if let runLoopSource {
             CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         }
         CGEvent.tapEnable(tap: eventTap, enable: true)
+        return true
     }
 
     public func stop() {

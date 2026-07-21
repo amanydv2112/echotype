@@ -10,6 +10,7 @@ final class MainApp: NSObject, NSApplicationDelegate {
     private var statusBarController: StatusBarController!
     private var settingsWindowController: SettingsWindowController?
     private var shortcutMonitor: GlobalShortcutMonitor!
+    private var accessibilityPollTimer: Timer?
 
     static func main() {
         let app = NSApplication.shared
@@ -48,11 +49,12 @@ final class MainApp: NSObject, NSApplicationDelegate {
             self?.dictationController.endDictation()
         }
 
-        if PermissionsManager.accessibilityGranted(prompt: false) {
-            shortcutMonitor.start()
-        }
-
+        refreshShortcutMonitor(promptForAccessibility: true)
         statusBarController.refresh()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        accessibilityPollTimer?.invalidate()
     }
 
     private func showSettings() {
@@ -61,13 +63,53 @@ final class MainApp: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 self.shortcutMonitor.keyCode = self.appState.settings.shortcutKeyCode
                 self.shortcutMonitor.requiresOption = self.appState.settings.shortcutRequiresOption
-                if PermissionsManager.accessibilityGranted(prompt: false) {
-                    self.shortcutMonitor.start()
-                }
-                self.statusBarController.refresh()
+                self.refreshShortcutMonitor(promptForAccessibility: false)
             }
         }
         settingsWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func refreshShortcutMonitor(promptForAccessibility: Bool) {
+        let trusted = PermissionsManager.accessibilityGranted(prompt: promptForAccessibility)
+        appState.accessibilityTrusted = trusted
+
+        guard trusted else {
+            shortcutMonitor.stop()
+            appState.lastMessage = "Enable Accessibility permission for Option + Space"
+            statusBarController.refresh()
+            if promptForAccessibility {
+                UserNotifier.notify(
+                    title: "EchoType needs Accessibility",
+                    body: "Enable EchoType in System Settings > Privacy & Security > Accessibility."
+                )
+            }
+            startAccessibilityPolling()
+            return
+        }
+
+        accessibilityPollTimer?.invalidate()
+        accessibilityPollTimer = nil
+
+        guard shortcutMonitor.start() else {
+            appState.lastMessage = "Unable to start Option + Space shortcut. Restart EchoType."
+            UserNotifier.notify(title: "EchoType shortcut unavailable", body: appState.lastMessage)
+            statusBarController.refresh()
+            return
+        }
+
+        if appState.lastMessage.contains("Accessibility") || appState.lastMessage.contains("shortcut") {
+            appState.lastMessage = "Ready"
+        }
+        statusBarController.refresh()
+    }
+
+    private func startAccessibilityPolling() {
+        guard accessibilityPollTimer == nil else { return }
+        accessibilityPollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshShortcutMonitor(promptForAccessibility: false)
+            }
+        }
     }
 }

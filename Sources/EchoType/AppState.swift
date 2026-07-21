@@ -8,6 +8,7 @@ final class AppState: ObservableObject {
     @Published var apiKey: String
     @Published var lastMessage: String = "Ready"
     @Published var isPaused: Bool = false
+    @Published var accessibilityTrusted: Bool = false
 
     let settingsStore: UserDefaultsSettingsStore
     let historyStore: SQLiteHistoryStore?
